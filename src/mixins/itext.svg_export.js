@@ -1,6 +1,7 @@
 /* _TO_SVG_START_ */
 fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.prototype */ {
-  var NUM_FRACTION_DIGITS = fabric.Object.NUM_FRACTION_DIGITS;
+  var toFixed = fabric.util.toFixed,
+      NUM_FRACTION_DIGITS = fabric.Object.NUM_FRACTION_DIGITS;
   /**
    * @private
    */
