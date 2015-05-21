@@ -351,11 +351,15 @@
     _setImageSmoothing: function() {
       var ctx = this.getContext();
 
-      ctx.imageSmoothingEnabled       = this.imageSmoothingEnabled;
-      ctx.webkitImageSmoothingEnabled = this.imageSmoothingEnabled;
-      ctx.mozImageSmoothingEnabled    = this.imageSmoothingEnabled;
-      ctx.msImageSmoothingEnabled     = this.imageSmoothingEnabled;
-      ctx.oImageSmoothingEnabled      = this.imageSmoothingEnabled;
+      if ( ctx.imageSmoothingEnabled != null ) {
+        ctx.imageSmoothingEnabled       = this.imageSmoothingEnabled;
+      }
+      else {
+        ctx.webkitImageSmoothingEnabled =
+          ctx.mozImageSmoothingEnabled  =
+          ctx.msImageSmoothingEnabled   =
+          ctx.oImageSmoothingEnabled    = this.imageSmoothingEnabled;
+      }
     },
 
     /**
