@@ -338,6 +338,9 @@
      */
     enterEditing: function() {
       if (this.isEditing || !this.editable) {
+        if (this.hiddenTextarea) {
+          this.hiddenTextarea.focus();
+        }
         return;
       }
 
@@ -514,10 +517,7 @@
       var isBeginningOfLine = this.text[index - 1] === '\n',
           indexStyle = isBeginningOfLine ? index : index - 1;
       this.removeStyleObject(isBeginningOfLine, indexStyle);
-      this.text = this.text.slice(0, index - 1) +
-                  this.text.slice(index);
-
-      this._textLines = this.text.split(this._reNewline);
+      this.set('text', this.text.slice(0, index - 1) + this.text.slice(index));
     },
 
     /**
@@ -530,8 +530,8 @@
         this.setSelectionEnd(this.selectionStart);
       }
       var isEndOfLine = this.text[this.selectionStart] === '\n';
-      this.text = this.text.slice(0, this.selectionStart) +
-                  _chars + this.text.slice(this.selectionEnd);
+      this.set('text', this.text.slice(0, this.selectionStart) +
+                  _chars + this.text.slice(this.selectionEnd));
       this.insertStyleObjects(_chars, isEndOfLine, useCopiedStyle);
       this.setSelectionStart(this.selectionStart + _chars.length);
       this.setSelectionEnd(this.selectionStart);
@@ -636,7 +636,7 @@
         this.insertNewlineStyleObject(lineIndex, charIndex, isEndOfLine);
       }
       else {
-        if (useCopiedStyle) {
+        if (useCopiedStyle && this.copiedStyles != null) {
           this._insertStyles(this.copiedStyles);
         }
         else {

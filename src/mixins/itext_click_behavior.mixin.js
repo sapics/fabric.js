@@ -215,13 +215,13 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
         }
 
         return this._getNewSelectionStartFromOffset(
-          mouseOffset, prevWidth, width, charIndex + i, jlen);
+          mouseOffset, prevWidth, width, charIndex, i, jlen);
       }
 
       if (mouseOffset.y < height) {
         //this happens just on end of lines.
         return this._getNewSelectionStartFromOffset(
-          mouseOffset, prevWidth, width, charIndex + i - 1, jlen);
+          mouseOffset, prevWidth, width, charIndex - 1, i, jlen);
       }
     }
 
@@ -234,12 +234,16 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
   /**
    * @private
    */
-  _getNewSelectionStartFromOffset: function(mouseOffset, prevWidth, width, index, jlen) {
+  _getNewSelectionStartFromOffset: function(mouseOffset, prevWidth, width, index, lineIndex, jlen) {
+
+    if (this.type === 'textbox') {
+      lineIndex = 0;
+    }
 
     var distanceBtwLastCharAndCursor = mouseOffset.x - prevWidth,
         distanceBtwNextCharAndCursor = width - mouseOffset.x,
         offset = distanceBtwNextCharAndCursor > distanceBtwLastCharAndCursor ? 0 : 1,
-        newSelectionStart = index + offset;
+        newSelectionStart = index + lineIndex + offset;
 
     // if object is horizontally flipped, mirror cursor location from the end
     if (this.flipX) {

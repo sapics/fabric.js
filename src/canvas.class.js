@@ -508,7 +508,16 @@
      * @private
      */
     _setObjectScale: function(localMouse, transform, lockScalingX, lockScalingY, by, lockScalingFlip) {
-      var target = transform.target, forbidScalingX = false, forbidScalingY = false,
+      var target = transform.target;
+      if (target.type === 'textbox') {
+        var w = target.width * ((localMouse.x / transform.scaleX) / (target.width + target.strokeWidth));
+        if (w >= target.minWidth) {
+          target.set('width', w);
+        }
+        return;
+      }
+
+      var forbidScalingX = false, forbidScalingY = false,
           dim = target._getNonTransformedDimensions();
 
       transform.newScaleX = localMouse.x / dim.x;

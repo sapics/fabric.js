@@ -7,7 +7,10 @@
       clone = fabric.util.object.clone,
       toFixed = fabric.util.toFixed,
       supportsLineDash = fabric.StaticCanvas.supports('setLineDash'),
-      NUM_FRACTION_DIGITS = fabric.Object.NUM_FRACTION_DIGITS;
+      NUM_FRACTION_DIGITS = fabric.Object.NUM_FRACTION_DIGITS,
+      textCtx = fabric.util.createCanvasElement().getContext('2d');
+
+  textCtx.save();
 
   if (fabric.Text) {
     fabric.warn('fabric.Text is already defined');
@@ -325,11 +328,13 @@
       if (this.__skipDimension) {
         return;
       }
+
       if (!ctx) {
-        ctx = fabric.util.createCanvasElement().getContext('2d');
+        ctx = textCtx;
+        ctx.restore();
         this._setTextStyles(ctx);
       }
-      this._textLines = this.text.split(this._reNewline);
+      this._textLines = this._splitTextIntoLines();
       this._clearCache();
       var currentTextAlign = this.textAlign;
       this.textAlign = 'left';
@@ -796,6 +801,14 @@
       }
       this._render(ctx);
       ctx.restore();
+    },
+
+    /**
+     * Returns the text as an array of lines.
+     * @returns {Array} Lines in the text
+     */
+    _splitTextIntoLines: function() {
+      return this.text.split(this._reNewline);
     },
 
     /**
