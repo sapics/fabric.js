@@ -1,4 +1,4 @@
-(function() {
+﻿(function() {
 
   var clone = fabric.util.object.clone
     , textboxCtx = fabric.util.createCanvasElement().getContext('2d');
