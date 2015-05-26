@@ -30,8 +30,7 @@
 
   if (!sliceCanConvertNodelists) {
     toArray = function(arrayLike) {
-      var arr = new Array(arrayLike.length), i = arrayLike.length;
-      while (i--) {
+      for(var i = arrayLike.length, arr = new Array(i); i--; ) {
         arr[i] = arrayLike[i];
       }
       return arr;

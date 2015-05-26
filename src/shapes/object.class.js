@@ -1152,7 +1152,13 @@
      */
     clone: function(callback, propertiesToInclude) {
       if (this.constructor.fromObject) {
-        return this.constructor.fromObject(this.toObject(propertiesToInclude), callback);
+        var object = this.toObject(propertiesToInclude);
+        if (this.constructor.async) {
+          return this.constructor.fromObject(object, callback);
+        }
+        object = this.constructor.fromObject(object);
+        callback && callback(object);
+        return object;
       }
       return new fabric.Object(this.toObject(propertiesToInclude));
     },

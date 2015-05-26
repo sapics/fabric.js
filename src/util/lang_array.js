@@ -147,7 +147,7 @@
         rv = arguments[1];
       }
       else {
-        do {
+        for( ; ; ) {
           if (i in this) {
             rv = this[i++];
             break;
@@ -157,7 +157,6 @@
             throw new TypeError();
           }
         }
-        while (true);
       }
       for (; i < len; i++) {
         if (i in this) {
