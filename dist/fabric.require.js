@@ -1676,7 +1676,7 @@ if (typeof console !== "undefined") {
     }();
     function parseStyleString(style, oStyle) {
         var attr, value;
-        style.replace(/;$/, "").split(";").forEach(function(chunk) {
+        style.replace(/;\s*$/, "").split(";").forEach(function(chunk) {
             var pair = chunk.split(":");
             attr = normalizeAttr(pair[0].trim().toLowerCase());
             value = normalizeValue(attr, pair[1].trim());
@@ -7812,8 +7812,10 @@ fabric.util.object.extend(fabric.Object.prototype, {
     fabric.Group = fabric.util.createClass(fabric.Object, fabric.Collection, {
         type: "group",
         strokeWidth: 0,
-        initialize: function(objects, options) {
+        initialize: function(objects, options, isAlreadyGrouped) {
             options = options || {};
+            this._objects = [];
+            isAlreadyGrouped && this.callSuper("initialize", options);
             this._objects = objects || [];
             for (var i = this._objects.length; i--; ) {
                 this._objects[i].group = this;
@@ -7825,16 +7827,27 @@ fabric.util.object.extend(fabric.Object.prototype, {
             if (options.originY) {
                 this.originY = options.originY;
             }
-            this._calcBounds();
-            this._updateObjectsCoords();
-            this.callSuper("initialize", options);
+            if (isAlreadyGrouped) {
+                this._updateObjectsCoords(true);
+            } else {
+                this._calcBounds();
+                this._updateObjectsCoords();
+                this.callSuper("initialize", options);
+            }
             this.setCoords();
             this.saveCoords();
         },
-        _updateObjectsCoords: function() {
-            this.forEachObject(this._updateObjectCoords, this);
+        _updateObjectsCoords: function(skipCoordsChange) {
+            for (var i = this._objects.length; i--; ) {
+                this._updateObjectCoords(this._objects[i], skipCoordsChange);
+            }
         },
-        _updateObjectCoords: function(object) {
+        _updateObjectCoords: function(object, skipCoordsChange) {
+            object.__origHasControls = object.hasControls;
+            object.hasControls = false;
+            if (skipCoordsChange) {
+                return;
+            }
             var objectLeft = object.getLeft(), objectTop = object.getTop(), center = this.getCenterPoint();
             object.set({
                 originalLeft: objectLeft,
@@ -7843,8 +7856,6 @@ fabric.util.object.extend(fabric.Object.prototype, {
                 top: objectTop - center.y
             });
             object.setCoords();
-            object.__origHasControls = object.hasControls;
-            object.hasControls = false;
         },
         toString: function() {
             return "#<fabric.Group: (" + this.complexity() + ")>";
@@ -8090,7 +8101,7 @@ fabric.util.object.extend(fabric.Object.prototype, {
     fabric.Group.fromObject = function(object, callback) {
         fabric.util.enlivenObjects(object.objects, function(enlivenedObjects) {
             delete object.objects;
-            callback && callback(new fabric.Group(enlivenedObjects, object));
+            callback && callback(new fabric.Group(enlivenedObjects, object, true));
         });
     };
     fabric.Group.async = true;
