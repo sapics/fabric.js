@@ -5816,41 +5816,38 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
 })(typeof exports !== "undefined" ? exports : this);
 
 (function() {
-    var degreesToRadians = fabric.util.degreesToRadians;
+    var degreesToRadians = fabric.util.degreesToRadians, originXOffset = {
+        left: -.5,
+        center: 0,
+        right: .5
+    }, originYOffset = {
+        top: -.5,
+        center: 0,
+        bottom: .5
+    };
     fabric.util.object.extend(fabric.Object.prototype, {
-        translateToCenterPoint: function(point, originX, originY) {
-            var cx = point.x, cy = point.y, dim;
-            if (originX !== "center" || originY !== "center") {
+        translateToGivenOrigin: function(point, fromOriginX, fromOriginY, toOriginX, toOriginY) {
+            var x = point.x, y = point.y, offsetX = originXOffset[toOriginX] - originXOffset[fromOriginX], offsetY = originYOffset[toOriginY] - originYOffset[fromOriginY], dim;
+            if (offsetX || offsetY) {
                 dim = this._getTransformedDimensions();
+                x = point.x + offsetX * dim.x;
+                y = point.y + offsetY * dim.y;
             }
-            if (originX === "left") {
-                cx = point.x + dim.x / 2;
-            } else if (originX === "right") {
-                cx = point.x - dim.x / 2;
+            return new fabric.Point(x, y);
+        },
+        translateToCenterPoint: function(point, originX, originY) {
+            var p = this.translateToGivenOrigin(point, originX, originY, "center", "center");
+            if (this.angle) {
+                return fabric.util.rotatePoint(p, point, degreesToRadians(this.angle));
             }
-            if (originY === "top") {
-                cy = point.y + dim.y / 2;
-            } else if (originY === "bottom") {
-                cy = point.y - dim.y / 2;
-            }
-            return fabric.util.rotatePoint(new fabric.Point(cx, cy), point, degreesToRadians(this.angle));
+            return p;
         },
         translateToOriginPoint: function(center, originX, originY) {
-            var x = center.x, y = center.y, dim;
-            if (originX !== "center" || originY !== "center") {
-                dim = this._getTransformedDimensions();
+            var p = this.translateToGivenOrigin(center, "center", "center", originX, originY);
+            if (this.angle) {
+                return fabric.util.rotatePoint(p, center, degreesToRadians(this.angle));
             }
-            if (originX === "left") {
-                x = center.x - dim.x / 2;
-            } else if (originX === "right") {
-                x = center.x + dim.x / 2;
-            }
-            if (originY === "top") {
-                y = center.y - dim.y / 2;
-            } else if (originY === "bottom") {
-                y = center.y + dim.y / 2;
-            }
-            return fabric.util.rotatePoint(new fabric.Point(x, y), center, degreesToRadians(this.angle));
+            return p;
         },
         getCenterPoint: function() {
             var leftTop = new fabric.Point(this.left, this.top);
@@ -5861,30 +5858,17 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
             return this.translateToOriginPoint(center, originX, originY);
         },
         toLocalPoint: function(point, originX, originY) {
-            var center = this.getCenterPoint(), x, y, dim;
+            var center = this.getCenterPoint(), p, dim, p2;
             if (originX && originY) {
-                if (originX !== "center" || originY !== "center") {
-                    dim = this._getTransformedDimensions();
-                }
-                if (originX === "left") {
-                    x = center.x - dim.x / 2;
-                } else if (originX === "right") {
-                    x = center.x + dim.x / 2;
-                } else {
-                    x = center.x;
-                }
-                if (originY === "top") {
-                    y = center.y - dim.y / 2;
-                } else if (originY === "bottom") {
-                    y = center.y + dim.y / 2;
-                } else {
-                    y = center.y;
-                }
+                p = this.translateToGivenOrigin(center, "center", "center", originX, originY);
             } else {
-                x = this.left;
-                y = this.top;
+                p = new fabric.Point(this.left, this.top);
             }
-            return fabric.util.rotatePoint(new fabric.Point(point.x, point.y), center, -degreesToRadians(this.angle)).subtractEquals(new fabric.Point(x, y));
+            p2 = new fabric.Point(point.x, point.y);
+            if (this.angle) {
+                p2 = fabric.util.rotatePoint(p2, center, -degreesToRadians(this.angle));
+            }
+            return p2.subtractEquals(p);
         },
         setPositionByOrigin: function(pos, originX, originY) {
             var center = this.translateToCenterPoint(pos, originX, originY), position = this.translateToOriginPoint(center, this.originX, this.originY);
@@ -5893,19 +5877,8 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
         },
         adjustPosition: function(to) {
             var angle = degreesToRadians(this.angle), hypotHalf = this.getWidth() / 2, xHalf = Math.cos(angle) * hypotHalf, yHalf = Math.sin(angle) * hypotHalf, hypotFull = this.getWidth(), xFull = Math.cos(angle) * hypotFull, yFull = Math.sin(angle) * hypotFull;
-            if (this.originX === "center" && to === "left" || this.originX === "right" && to === "center") {
-                this.left -= xHalf;
-                this.top -= yHalf;
-            } else if (this.originX === "left" && to === "center" || this.originX === "center" && to === "right") {
-                this.left += xHalf;
-                this.top += yHalf;
-            } else if (this.originX === "left" && to === "right") {
-                this.left += xFull;
-                this.top += yFull;
-            } else if (this.originX === "right" && to === "left") {
-                this.left -= xFull;
-                this.top -= yFull;
-            }
+            this.left += xFull * (originXOffset[to] - originXOffset[this.originX]);
+            this.top += yFull * (originXOffset[to] - originXOffset[this.originX]);
             this.setCoords();
             this.originX = to;
         },
