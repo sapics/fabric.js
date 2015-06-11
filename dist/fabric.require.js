@@ -5796,10 +5796,13 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
         },
         getLocalPointer: function(e, pointer) {
             pointer = pointer || this.canvas.getPointer(e);
-            var objectLeftTop = this.translateToOriginPoint(this.getCenterPoint(), "left", "top");
+            var pClicked = new fabric.Point(pointer.x, pointer.y), objectLeftTop = this._getLeftTopCoords();
+            if (this.angle) {
+                pClicked = fabric.util.rotatePoint(pClicked, objectLeftTop, fabric.util.degreesToRadians(-this.angle));
+            }
             return {
-                x: pointer.x - objectLeftTop.x,
-                y: pointer.y - objectLeftTop.y
+                x: pClicked.x - objectLeftTop.x,
+                y: pClicked.y - objectLeftTop.y
             };
         },
         _setupCompositeOperation: function(ctx) {
@@ -10634,12 +10637,8 @@ fabric.util.object.extend(fabric.IText.prototype, {
             this.setSelectionEnd(newSelectionStart);
         }
     },
-    _getLocalRotatedPointer: function(e) {
-        var pointer = this.canvas.getPointer(e), pClicked = new fabric.Point(pointer.x, pointer.y), pLeftTop = new fabric.Point(this.left, this.top), rotated = fabric.util.rotatePoint(pClicked, pLeftTop, fabric.util.degreesToRadians(-this.angle));
-        return this.getLocalPointer(e, rotated);
-    },
     getSelectionStartFromPointer: function(e) {
-        var mouseOffset = this._getLocalRotatedPointer(e), prevWidth = 0, width = 0, height = 0, charIndex = 0, newSelectionStart, line;
+        var mouseOffset = this._getLocalPointer(e), prevWidth = 0, width = 0, height = 0, charIndex = 0, newSelectionStart, line;
         for (var i = 0, len = this._textLines.length; i < len; i++) {
             line = this._textLines[i];
             height += this._getHeightOfLine(this.ctx, i) * this.scaleY;
