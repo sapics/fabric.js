@@ -10661,7 +10661,7 @@ fabric.util.object.extend(fabric.IText.prototype, {
         }
     },
     getSelectionStartFromPointer: function(e) {
-        var mouseOffset = this._getLocalPointer(e), prevWidth = 0, width = 0, height = 0, charIndex = 0, newSelectionStart, line;
+        var mouseOffset = this.getLocalPointer(e), prevWidth = 0, width = 0, height = 0, charIndex = 0, newSelectionStart, line;
         for (var i = 0, len = this._textLines.length; i < len; i++) {
             line = this._textLines[i];
             height += this._getHeightOfLine(this.ctx, i) * this.scaleY;
