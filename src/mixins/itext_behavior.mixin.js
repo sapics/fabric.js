@@ -517,7 +517,7 @@
       this.text = this.text.slice(0, index - 1) +
                   this.text.slice(index);
 
-      this._textLines = this.text.split(this._reNewline);
+      this._textLines = this._splitTextIntoLines();
     },
 
     /**
@@ -628,8 +628,8 @@
           lineIndex = cursorLocation.lineIndex,
           charIndex = cursorLocation.charIndex;
 
-      if (!this.styles[lineIndex]) {
-        this.styles[lineIndex] = { };
+      if (!this._getLineStyle(lineIndex)) {
+        this._setLineStyle(lineIndex, {});
       }
 
       if (_chars === '\n') {
