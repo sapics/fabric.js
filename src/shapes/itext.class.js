@@ -959,7 +959,7 @@
      * @param {Object} syle
      * @private
      */
-    _setLineStyle: function(lineIndex, syle) {
+    _setLineStyle: function(lineIndex, style) {
       this.styles[lineIndex] = style;
     },
 
