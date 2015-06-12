@@ -941,9 +941,9 @@ fabric.Collection = {
     }
     fabric.util.addListener = addListener;
     fabric.util.removeListener = removeListener;
-    function getPointer(event, upperCanvasEl) {
+    function getPointer(event) {
         event || (event = fabric.window.event);
-        var element = event.target || (typeof event.srcElement !== unknown ? event.srcElement : null), scroll = fabric.util.getScrollLeftTop(element, upperCanvasEl);
+        var element = event.target || (typeof event.srcElement !== unknown ? event.srcElement : null), scroll = fabric.util.getScrollLeftTop(element);
         return {
             x: pointerX(event) + scroll.left,
             y: pointerY(event) + scroll.top
@@ -1064,23 +1064,22 @@ fabric.Collection = {
         wrapper.appendChild(element);
         return wrapper;
     }
-    function getScrollLeftTop(element, upperCanvasEl) {
-        var firstFixedAncestor, origElement, left = 0, top = 0, docElement = fabric.document.documentElement, body = fabric.document.body || {
+    function getScrollLeftTop(element) {
+        var left = 0, top = 0, docElement = fabric.document.documentElement, body = fabric.document.body || {
             scrollLeft: 0,
             scrollTop: 0
         };
-        origElement = element;
-        while (element && element.parentNode && !firstFixedAncestor) {
+        while (element && element.parentNode) {
             element = element.parentNode;
-            if (element.nodeType === 1 && fabric.util.getElementStyle(element, "position") === "fixed") {
-                firstFixedAncestor = element;
-            }
             if (element === fabric.document) {
                 left = body.scrollLeft || docElement.scrollLeft || 0;
                 top = body.scrollTop || docElement.scrollTop || 0;
             } else {
                 left += element.scrollLeft || 0;
                 top += element.scrollTop || 0;
+            }
+            if (element.nodeType === 1 && fabric.util.getElementStyle(element, "position") === "fixed") {
+                break;
             }
         }
         return {
@@ -1102,10 +1101,7 @@ fabric.Collection = {
             paddingTop: "top"
         };
         if (!doc) {
-            return {
-                left: 0,
-                top: 0
-            };
+            return offset;
         }
         for (var attr in offsetAttributes) {
             offset[offsetAttributes[attr]] += parseInt(getElementStyle(element, attr), 10) || 0;
@@ -1114,7 +1110,7 @@ fabric.Collection = {
         if (typeof element.getBoundingClientRect !== "undefined") {
             box = element.getBoundingClientRect();
         }
-        scrollLeftTop = fabric.util.getScrollLeftTop(element, null);
+        scrollLeftTop = getScrollLeftTop(element);
         return {
             left: box.left + scrollLeftTop.left - (docElem.clientLeft || 0) + offset.left,
             top: box.top + scrollLeftTop.top - (docElem.clientTop || 0) + offset.top
@@ -4361,7 +4357,7 @@ fabric.PatternBrush = fabric.util.createClass(fabric.PencilBrush, {
             if (!upperCanvasEl) {
                 upperCanvasEl = this.upperCanvasEl;
             }
-            var pointer = getPointer(e, upperCanvasEl), bounds = upperCanvasEl.getBoundingClientRect(), boundsWidth = bounds.width || 0, boundsHeight = bounds.height || 0, cssScale;
+            var pointer = getPointer(e), bounds = upperCanvasEl.getBoundingClientRect(), boundsWidth = bounds.width || 0, boundsHeight = bounds.height || 0, cssScale;
             if (!boundsWidth || !boundsHeight) {
                 if ("top" in bounds && "bottom" in bounds) {
                     boundsHeight = Math.abs(bounds.top - bounds.bottom);
@@ -5855,7 +5851,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
             return this.translateToOriginPoint(center, originX, originY);
         },
         toLocalPoint: function(point, originX, originY) {
-            var center = this.getCenterPoint(), p, dim, p2;
+            var center = this.getCenterPoint(), p, p2;
             if (originX && originY) {
                 p = this.translateToGivenOrigin(center, "center", "center", originX, originY);
             } else {

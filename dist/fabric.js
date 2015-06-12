@@ -1801,15 +1801,14 @@ fabric.Collection = {
    * Cross-browser wrapper for getting event's coordinates
    * @memberOf fabric.util
    * @param {Event} event Event object
-   * @param {HTMLCanvasElement} upperCanvasEl &lt;canvas> element on which object selection is drawn
    */
-  function getPointer(event, upperCanvasEl) {
+  function getPointer(event) {
     event || (event = fabric.window.event);
 
     var element = event.target ||
                   (typeof event.srcElement !== unknown ? event.srcElement : null),
 
-        scroll = fabric.util.getScrollLeftTop(element, upperCanvasEl);
+        scroll = fabric.util.getScrollLeftTop(element);
 
     return {
       x: pointerX(event) + scroll.left,
@@ -2023,30 +2022,20 @@ fabric.Collection = {
    * Returns element scroll offsets
    * @memberOf fabric.util
    * @param {HTMLElement} element Element to operate on
-   * @param {HTMLElement} upperCanvasEl Upper canvas element
    * @return {Object} Object with left/top values
    */
-  function getScrollLeftTop(element, upperCanvasEl) {
+  function getScrollLeftTop(element) {
 
-    var firstFixedAncestor,
-        origElement,
-        left = 0,
+    var left = 0,
         top = 0,
         docElement = fabric.document.documentElement,
         body = fabric.document.body || {
           scrollLeft: 0, scrollTop: 0
         };
 
-    origElement = element;
-
-    while (element && element.parentNode && !firstFixedAncestor) {
+    while (element && element.parentNode) {
 
       element = element.parentNode;
-
-      if (element.nodeType === 1 &&
-          fabric.util.getElementStyle(element, 'position') === 'fixed') {
-        firstFixedAncestor = element;
-      }
 
       if (element === fabric.document) {
         left = body.scrollLeft || docElement.scrollLeft || 0;
@@ -2055,6 +2044,11 @@ fabric.Collection = {
       else {
         left += element.scrollLeft || 0;
         top += element.scrollTop || 0;
+      }
+
+      if (element.nodeType === 1 &&
+          fabric.util.getElementStyle(element, 'position') === 'fixed') {
+        break;
       }
     }
 
@@ -2082,7 +2076,7 @@ fabric.Collection = {
         };
 
     if (!doc) {
-      return { left: 0, top: 0 };
+      return offset;
     }
 
     for (var attr in offsetAttributes) {
@@ -2094,7 +2088,7 @@ fabric.Collection = {
       box = element.getBoundingClientRect();
     }
 
-    scrollLeftTop = fabric.util.getScrollLeftTop(element, null);
+    scrollLeftTop = getScrollLeftTop(element);
 
     return {
       left: box.left + scrollLeftTop.left - (docElem.clientLeft || 0) + offset.left,
@@ -8797,7 +8791,7 @@ fabric.PatternBrush = fabric.util.createClass(fabric.PencilBrush, /** @lends fab
       if (!upperCanvasEl) {
         upperCanvasEl = this.upperCanvasEl;
       }
-      var pointer = getPointer(e, upperCanvasEl),
+      var pointer = getPointer(e),
           bounds = upperCanvasEl.getBoundingClientRect(),
           boundsWidth = bounds.width || 0,
           boundsHeight = bounds.height || 0,
@@ -12139,7 +12133,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
      */
     toLocalPoint: function(point, originX, originY) {
       var center = this.getCenterPoint(),
-          p, dim, p2;
+          p, p2;
 
       if (originX && originY) {
         p = this.translateToGivenOrigin(center, 'center', 'center', originX, originY);
