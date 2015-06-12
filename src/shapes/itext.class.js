@@ -259,8 +259,9 @@
         return styles;
       }
 
-      var loc = this.get2DCursorLocation(startIndex);
-      var style = this._getStyleDeclaration(loc.lineIndex, loc.charIndex);
+      var loc = this.get2DCursorLocation(startIndex),
+          style = this._getStyleDeclaration(loc.lineIndex, loc.charIndex);
+
       return style || {};
     },
 
@@ -291,7 +292,7 @@
       var loc = this.get2DCursorLocation(index);
 
       if (!this._getLineStyle(loc.lineIndex)) {
-        this._setLineStyle(loc.lineIndex, {})
+        this._setLineStyle(loc.lineIndex, {});
       }
 
       if (!this._getStyleDeclaration(loc.lineIndex, loc.charIndex)) {
@@ -917,7 +918,7 @@
      * @private
      */
     _getStyleDeclaration: function(lineIndex, charIndex, returnCloneOrEmpty) {
-      if(returnCloneOrEmpty) {
+      if (returnCloneOrEmpty) {
         return (this.styles[lineIndex] && this.styles[lineIndex][charIndex])
           ? clone(this.styles[lineIndex][charIndex])
           : { };
@@ -956,7 +957,7 @@
 
     /**
      * @param {Number} lineIndex
-     * @param {Object} syle
+     * @param {Object} style
      * @private
      */
     _setLineStyle: function(lineIndex, style) {
