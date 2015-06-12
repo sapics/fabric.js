@@ -2048,13 +2048,7 @@ fabric.Collection = {
         firstFixedAncestor = element;
       }
 
-      if (element.nodeType === 1 &&
-          origElement !== upperCanvasEl &&
-          fabric.util.getElementStyle(element, 'position') === 'absolute') {
-        left = 0;
-        top = 0;
-      }
-      else if (element === fabric.document) {
+      if (element === fabric.document) {
         left = body.scrollLeft || docElement.scrollLeft || 0;
         top = body.scrollTop ||  docElement.scrollTop || 0;
       }
@@ -12200,9 +12194,6 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
      */
     adjustPosition: function(to) {
       var angle = degreesToRadians(this.angle),
-          hypotHalf = this.getWidth() / 2,
-          xHalf = Math.cos(angle) * hypotHalf,
-          yHalf = Math.sin(angle) * hypotHalf,
           hypotFull = this.getWidth(),
           xFull = Math.cos(angle) * hypotFull,
           yFull = Math.sin(angle) * hypotFull;
@@ -20753,8 +20744,9 @@ fabric.Image.filters.BaseFilter = fabric.util.createClass(/** @lends fabric.Imag
         return styles;
       }
 
-      var loc = this.get2DCursorLocation(startIndex);
-      var style = this._getStyleDeclaration(loc.lineIndex, loc.charIndex);
+      var loc = this.get2DCursorLocation(startIndex),
+          style = this._getStyleDeclaration(loc.lineIndex, loc.charIndex);
+
       return style || {};
     },
 
@@ -20785,7 +20777,7 @@ fabric.Image.filters.BaseFilter = fabric.util.createClass(/** @lends fabric.Imag
       var loc = this.get2DCursorLocation(index);
 
       if (!this._getLineStyle(loc.lineIndex)) {
-        this._setLineStyle(loc.lineIndex, {})
+        this._setLineStyle(loc.lineIndex, {});
       }
 
       if (!this._getStyleDeclaration(loc.lineIndex, loc.charIndex)) {
@@ -21411,7 +21403,7 @@ fabric.Image.filters.BaseFilter = fabric.util.createClass(/** @lends fabric.Imag
      * @private
      */
     _getStyleDeclaration: function(lineIndex, charIndex, returnCloneOrEmpty) {
-      if(returnCloneOrEmpty) {
+      if (returnCloneOrEmpty) {
         return (this.styles[lineIndex] && this.styles[lineIndex][charIndex])
           ? clone(this.styles[lineIndex][charIndex])
           : { };
@@ -21450,7 +21442,7 @@ fabric.Image.filters.BaseFilter = fabric.util.createClass(/** @lends fabric.Imag
 
     /**
      * @param {Number} lineIndex
-     * @param {Object} syle
+     * @param {Object} style
      * @private
      */
     _setLineStyle: function(lineIndex, style) {
@@ -22259,9 +22251,14 @@ fabric.Image.filters.BaseFilter = fabric.util.createClass(/** @lends fabric.Imag
       // 0,1,2,3 -> (charIndex=2) -> 0,1,3,4 -> (insert 2) -> 0,1,2,3,4
       for (var index in currentLineStylesCloned) {
         var numericIndex = parseInt(index, 10);
+
         if (numericIndex >= charIndex) {
           currentLineStyles[numericIndex + 1] = currentLineStylesCloned[numericIndex];
-          //delete currentLineStyles[index];
+
+          // only delete the style if there was nothing moved there
+          if(!currentLineStylesCloned[numericIndex - 1]) {
+            delete currentLineStyles[numericIndex];
+          }
         }
       }
 
@@ -23406,6 +23403,12 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      */
     minWidth: 20,
     /**
+     * Minimum calculated width of a textbox, in pixels.
+     * @type Number
+     * @default
+     */
+    dynamicMinWidth: 0,
+    /**
      * Cached array of text wrapping.
      * @type Array
      */
@@ -23433,6 +23436,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
       // add width to this list of props that effect line wrapping.
       this._dimensionAffectingProps.width = true;
     },
+
     /**
      * Unlike superclass's version of this function, Textbox does not update
      * its width.
@@ -23449,20 +23453,35 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
         ctx = fabric.util.createCanvasElement().getContext('2d');
         this._setTextStyles(ctx);
       }
+
+      // clear dynamicMinWidth as it will be different after we re-wrap line
+      this.dynamicMinWidth = 0;
+
+      // wrap lines
       this._textLines = this._splitTextIntoLines();
+
+      // if after wrapping, the width is smaller than dynamicMinWidth, change the width and re-wrap
+      if(this.dynamicMinWidth > this.width) {
+        this._set('width', this.dynamicMinWidth);
+      }
+
+      // calculate a styleMap that lets us know where styles as, as _textLines is separated by \n and wraps,
+      // but the style object line indices is by \n.
       this._styleMap = this._generateStyleMap();
+
+      // clear cache and re-calculate height
       this._clearCache();
       this.height = this._getTextHeight(ctx);
     },
 
-    _generateStyleMap: function() {
-      var realLineCount = 0;
-      var realLineCharCount = 0;
-      var charCount = 0;
-      var map = {};
+    _generateStyleMap: function () {
+      var realLineCount     = 0,
+          realLineCharCount = 0,
+          charCount         = 0,
+          map               = {};
 
-      for(var i = 0; i < this._textLines.length; i++) {
-        if(this.text[charCount] === '\n') {
+      for (var i = 0; i < this._textLines.length; i++) {
+        if (this.text[charCount] === '\n') {
           realLineCharCount = 0;
           charCount++;
           realLineCount++;
@@ -23483,17 +23502,17 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * @param {Boolean} [returnCloneOrEmpty=false]
      * @private
      */
-    _getStyleDeclaration: function(lineIndex, charIndex, returnCloneOrEmpty) {
-      if(this._styleMap) {
+    _getStyleDeclaration: function (lineIndex, charIndex, returnCloneOrEmpty) {
+      if (this._styleMap) {
         var map = this._styleMap[lineIndex];
         lineIndex = map.line;
         charIndex = map.offset + charIndex;
       }
 
-      if(returnCloneOrEmpty) {
+      if (returnCloneOrEmpty) {
         return (this.styles[lineIndex] && this.styles[lineIndex][charIndex])
           ? clone(this.styles[lineIndex][charIndex])
-          : { };
+          : {};
       }
 
       return this.styles[lineIndex] && this.styles[lineIndex][charIndex] ? this.styles[lineIndex][charIndex] : null;
@@ -23505,7 +23524,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * @param {Object} style
      * @private
      */
-    _setStyleDeclaration: function(lineIndex, charIndex, style) {
+    _setStyleDeclaration: function (lineIndex, charIndex, style) {
       var map = this._styleMap[lineIndex];
       lineIndex = map.line;
       charIndex = map.offset + charIndex;
@@ -23518,7 +23537,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * @param {Number} charIndex
      * @private
      */
-    _deleteStyleDeclaration: function(lineIndex, charIndex) {
+    _deleteStyleDeclaration: function (lineIndex, charIndex) {
       var map = this._styleMap[lineIndex];
       lineIndex = map.line;
       charIndex = map.offset + charIndex;
@@ -23530,7 +23549,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * @param {Number} lineIndex
      * @private
      */
-    _getLineStyle: function(lineIndex) {
+    _getLineStyle: function (lineIndex) {
       var map = this._styleMap[lineIndex];
       return this.styles[map.line];
     },
@@ -23540,7 +23559,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * @param {Object} style
      * @private
      */
-    _setLineStyle: function(lineIndex, style) {
+    _setLineStyle: function (lineIndex, style) {
       var map = this._styleMap[lineIndex];
       this.styles[map.line] = style;
     },
@@ -23549,7 +23568,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * @param {Number} lineIndex
      * @private
      */
-    _deleteLineStyle: function(lineIndex) {
+    _deleteLineStyle: function (lineIndex) {
       var map = this._styleMap[lineIndex];
       delete this.styles[map.line];
     },
@@ -23588,15 +23607,15 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
       charOffset = charOffset || 0;
 
       for (var i = 0; i < text.length; i++) {
-        decl = this._getStyleDeclaration(lineIndex, i + charOffset);
-
-        if (decl) {
+        if (this.styles && this.styles[lineIndex] && (decl = this.styles[lineIndex][i + charOffset])) {
           ctx.save();
           width += this._applyCharStylesGetWidth(ctx, text[i], lineIndex, i, decl);
           ctx.restore();
         }
         else {
-          width += this._applyCharStylesGetWidth(ctx, text[i], lineIndex, i);
+          // @note: we intentionally pass in an empty style declaration, because if we pass in nothing, it will
+          // retry fetching style declaration
+          width += this._applyCharStylesGetWidth(ctx, text[i], lineIndex, i, {});
         }
       }
 
@@ -23612,44 +23631,31 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * to.
      */
     _wrapLine: function (ctx, text, lineIndex) {
-      var maxWidth = this.width, words = text.split(' '),
-        lines = [],
-        line = '';
+      var maxWidth  = this.width,
+          words     = text.split(' '),
+          lines     = [],
+          line      = '',
+          offset    = 0,
+          lineWidth = this._measureText(ctx, text, lineIndex, offset);
 
-      var offset = 0;
+      // if the current line fits, do nothing
+      if (lineWidth < maxWidth) {
+        // if the current line is only one word, we need to keep track of it if it's a large word
+        if (text.indexOf(' ') === -1 && lineWidth > this.dynamicMinWidth) {
+          this.dynamicMinWidth = lineWidth;
+        }
 
-      if (this._measureText(ctx, text, lineIndex, offset) < maxWidth) {
         lines.push(text);
       }
       else {
+        var largestWordWidth = 0,
+            wordWidth        = 0;
+
         while (words.length > 0) {
+          wordWidth = this._measureText(ctx, words[0], lineIndex, line.length + offset);
+          lineWidth = line === '' ? wordWidth : this._measureText(ctx, line + words[0], lineIndex, offset);
 
-          /*
-           * If the textbox's width is less than the widest letter.
-           * TODO: Performance improvement - cache the width of W whenever
-           * fontSize changes.
-           */
-          if (maxWidth <= ctx.measureText('W').width) {
-            return text.split('');
-          }
-
-          /*
-           * This handles a word that is longer than the width of the
-           * text area.
-           */
-          while (Math.ceil(this._measureText(ctx, words[0], lineIndex, offset)) >= maxWidth) {
-            var tmp = words[0];
-            words[0] = tmp.slice(0, -1);
-
-            if (words.length > 1) {
-              words[1] = tmp.slice(-1) + words[1];
-            }
-            else {
-              words.push(tmp.slice(-1));
-            }
-          }
-
-          if (Math.ceil(this._measureText(ctx, line + words[0], lineIndex, offset)) < maxWidth) {
+          if (Math.ceil(lineWidth) < maxWidth || Math.ceil(wordWidth) >= maxWidth) {
             line += words.shift() + ' ';
           }
           else {
@@ -23661,6 +23667,15 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
           if (words.length === 0) {
             lines.push(line.substring(0, line.length - 1));
           }
+
+          // keep track of largest word
+          if (wordWidth > largestWordWidth) {
+            largestWordWidth = wordWidth;
+          }
+        }
+
+        if (largestWordWidth > this.dynamicMinWidth) {
+          this.dynamicMinWidth = largestWordWidth;
         }
       }
 
@@ -23712,13 +23727,13 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
         selectionStart = this.selectionStart;
       }
 
-      var numLines = this._textLines.length,
-        removed = 0,
-        textHasChanged = this.__text !== this.text;
+      var numLines       = this._textLines.length,
+          removed        = 0,
+          textHasChanged = this.__text !== this.text;
 
       for (var i = 0; i < numLines; i++) {
-        var line = this._textLines[i],
-          lineLen = line.length;
+        var line    = this._textLines[i],
+            lineLen = line.length;
 
         if (selectionStart <= removed + lineLen) {
           // edge case:
@@ -23757,11 +23772,11 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * @returns {Object} Object with 'top', 'left', and 'lineLeft' properties set.
      */
     _getCursorBoundariesOffsets: function (chars, typeOfBoundaries) {
-      var topOffset = 0,
-        leftOffset = 0,
-        cursorLocation = this.get2DCursorLocation(),
-        lineChars = this._textLines[cursorLocation.lineIndex].split(''),
-        lineLeftOffset = this._getCachedLineOffset(cursorLocation.lineIndex);
+      var topOffset      = 0,
+          leftOffset     = 0,
+          cursorLocation = this.get2DCursorLocation(),
+          lineChars      = this._textLines[cursorLocation.lineIndex].split(''),
+          lineLeftOffset = this._getCachedLineOffset(cursorLocation.lineIndex);
 
       for (var i = 0; i < cursorLocation.charIndex; i++) {
         leftOffset += this._getWidthOfChar(this.ctx, lineChars[i], cursorLocation.lineIndex, i);
@@ -23783,6 +23798,11 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
         lineLeft: lineLeftOffset
       };
     },
+
+    getMinWidth: function () {
+      return Math.max(this.minWidth, this.dynamicMinWidth);
+    },
+
     /**
      * Returns object representation of an instance
      * @method toObject
@@ -23846,7 +23866,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
     var t = transform.target;
     if (t instanceof fabric.Textbox) {
       var w = t.width * ((localMouse.x / transform.scaleX) / (t.width + t.strokeWidth));
-      if (w >= t.minWidth) {
+      if (w >= t.getMinWidth()) {
         t.set('width', w);
       }
     }
@@ -23879,12 +23899,12 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
     /**
      * @private
      */
-    _removeExtraneousStyles: function() {
-      //for (var prop in this._styleMap) {
-      //  if (!this._textLines[prop]) {
-      //    delete this.styles[this._styleMap[prop].line];
-      //  }
-      //}
+    _removeExtraneousStyles: function () {
+      for (var prop in this._styleMap) {
+        if (!this._textLines[prop]) {
+          delete this.styles[this._styleMap[prop].line];
+        }
+      }
     },
 
     /**
@@ -23893,7 +23913,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * @param {Number} charIndex Index of a char
      * @param {Object} [style] Style object to insert, if given
      */
-    insertCharStyleObject: function(lineIndex, charIndex, style) {
+    insertCharStyleObject: function (lineIndex, charIndex, style) {
       // adjust lineIndex and charIndex
       var map = this._styleMap[lineIndex];
       lineIndex = map.line;
@@ -23908,7 +23928,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * @param {Number} charIndex Index of a char
      * @param {Boolean} isEndOfLine True if it's end of line
      */
-    insertNewlineStyleObject: function(lineIndex, charIndex, isEndOfLine) {
+    insertNewlineStyleObject: function (lineIndex, charIndex, isEndOfLine) {
       // adjust lineIndex and charIndex
       var map = this._styleMap[lineIndex];
       lineIndex = map.line;
@@ -23924,7 +23944,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * @param {Number} lineIndex Index of a line
      * @param {Number} offset Can be -1 or +1
      */
-    shiftLineStyles: function(lineIndex, offset) {
+    shiftLineStyles: function (lineIndex, offset) {
       // shift all line styles by 1 upward
       var clonedStyles = clone(this.styles);
 
@@ -23953,10 +23973,10 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * @returns {String}
      * @private
      */
-    _getTextOnPreviousLine: function(lineIndex) {
+    _getTextOnPreviousLine: function (lineIndex) {
       var textOnPreviousLine = this._textLines[lineIndex - 1];
 
-      while(this._styleMap[lineIndex - 2] && this._styleMap[lineIndex - 2].line === this._styleMap[lineIndex - 1].line) {
+      while (this._styleMap[lineIndex - 2] && this._styleMap[lineIndex - 2].line === this._styleMap[lineIndex - 1].line) {
         textOnPreviousLine = this._textLines[lineIndex - 2] + textOnPreviousLine;
 
         lineIndex--;
@@ -23970,19 +23990,19 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
      * @param {Boolean} isBeginningOfLine True if cursor is at the beginning of line
      * @param {Number} [index] Optional index. When not given, current selectionStart is used.
      */
-    removeStyleObject: function(isBeginningOfLine, index) {
+    removeStyleObject: function (isBeginningOfLine, index) {
 
       var cursorLocation = this.get2DCursorLocation(index),
-        map = this._styleMap[cursorLocation.lineIndex],
-        lineIndex = map.line,
-        charIndex = map.offset + cursorLocation.charIndex;
+          map            = this._styleMap[cursorLocation.lineIndex],
+          lineIndex      = map.line,
+          charIndex      = map.offset + cursorLocation.charIndex;
 
       if (isBeginningOfLine) {
-        var textOnPreviousLine = this._getTextOnPreviousLine(cursorLocation.lineIndex),
-          newCharIndexOnPrevLine = textOnPreviousLine ? textOnPreviousLine.length : 0;
+        var textOnPreviousLine     = this._getTextOnPreviousLine(cursorLocation.lineIndex),
+            newCharIndexOnPrevLine = textOnPreviousLine ? textOnPreviousLine.length : 0;
 
         if (!this.styles[lineIndex - 1]) {
-          this.styles[lineIndex - 1] = { };
+          this.styles[lineIndex - 1] = {};
         }
 
         for (charIndex in this.styles[lineIndex]) {
