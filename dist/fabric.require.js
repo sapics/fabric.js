@@ -181,9 +181,8 @@ fabric.Collection = {
             return radians / PiBy180;
         },
         rotatePoint: function(point, origin, radians) {
-            var sin = Math.sin(radians), cos = Math.cos(radians);
             point.subtractEquals(origin);
-            var rx = point.x * cos - point.y * sin, ry = point.x * sin + point.y * cos;
+            var sin = Math.sin(radians), cos = Math.cos(radians), rx = point.x * cos - point.y * sin, ry = point.x * sin + point.y * cos;
             return new fabric.Point(rx, ry).addEquals(origin);
         },
         transformPoint: function(p, t, ignoreOffset) {
@@ -193,12 +192,10 @@ fabric.Collection = {
             return new fabric.Point(t[0] * p.x + t[2] * p.y + t[4], t[1] * p.x + t[3] * p.y + t[5]);
         },
         invertTransform: function(t) {
-            var r = t.slice(), a = 1 / (t[0] * t[3] - t[1] * t[2]);
-            r = [ a * t[3], -a * t[1], -a * t[2], a * t[0], 0, 0 ];
-            var o = fabric.util.transformPoint({
+            var a = 1 / (t[0] * t[3] - t[1] * t[2]), r = [ a * t[3], -a * t[1], -a * t[2], a * t[0] ], o = fabric.util.transformPoint({
                 x: t[4],
                 y: t[5]
-            }, r);
+            }, r, true);
             r[4] = -o.x;
             r[5] = -o.y;
             return r;
@@ -1078,10 +1075,7 @@ fabric.Collection = {
             if (element.nodeType === 1 && fabric.util.getElementStyle(element, "position") === "fixed") {
                 firstFixedAncestor = element;
             }
-            if (element.nodeType === 1 && origElement !== upperCanvasEl && fabric.util.getElementStyle(element, "position") === "absolute") {
-                left = 0;
-                top = 0;
-            } else if (element === fabric.document) {
+            if (element === fabric.document) {
                 left = body.scrollLeft || docElement.scrollLeft || 0;
                 top = body.scrollTop || docElement.scrollTop || 0;
             } else {
@@ -5879,7 +5873,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
             this.set("top", position.y);
         },
         adjustPosition: function(to) {
-            var angle = degreesToRadians(this.angle), hypotHalf = this.getWidth() / 2, xHalf = Math.cos(angle) * hypotHalf, yHalf = Math.sin(angle) * hypotHalf, hypotFull = this.getWidth(), xFull = Math.cos(angle) * hypotFull, yFull = Math.sin(angle) * hypotFull;
+            var angle = degreesToRadians(this.angle), hypotFull = this.getWidth(), xFull = Math.cos(angle) * hypotFull, yFull = Math.sin(angle) * hypotFull;
             this.left += xFull * (originXOffset[to] - originXOffset[this.originX]);
             this.top += yFull * (originXOffset[to] - originXOffset[this.originX]);
             this.setCoords();
@@ -8011,11 +8005,11 @@ fabric.util.object.extend(fabric.Object.prototype, {
             return this;
         },
         _calcBounds: function(onlyWidthHeight) {
-            var aX = [], aY = [], o, prop, props = [ "tr", "br", "bl", "tl" ];
-            for (var i = 0, len = this._objects.length; i < len; ++i) {
+            var aX = [], aY = [], o, prop, props = [ "tr", "br", "bl", "tl" ], i = 0, iLen = this._objects.length, j, jLen = props.length;
+            for (;i < iLen; ++i) {
                 o = this._objects[i];
                 o.setCoords();
-                for (var j = 0; j < props.length; j++) {
+                for (j = 0; j < jLen; j++) {
                     prop = props[j];
                     aX.push(o.oCoords[prop].x);
                     aY.push(o.oCoords[prop].y);
